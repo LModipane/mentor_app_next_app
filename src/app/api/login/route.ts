@@ -1,37 +1,41 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { db } from '@/lib/db'; // your drizzle db connection
+import { db } from '@/lib/db';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
-const SECRET_KEY = process.env.JWT_SECRET || 'dev_secret_key'; // store in .env
+const SECRET_KEY = process.env.JWT_SECRET || 'dev_secret_key';
 
 export async function POST(req: Request) {
-	try {
-		const { username, password } = await req.json();
+	const { username, password } = await req.json();
 
-		if (!username || !password)
-			return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
+	const user = await db.query.users.findFirst({
+		where: eq(users.username, username),
+	});
 
-		const userDB = await db.query.users.findFirst({
-			where: (users, { eq }) => eq(users.username, username),
-		});
-
-		if (!userDB) return NextResponse.json({ error: 'User not found' }, { status: 404 });
-
-		if (username !== userDB.username)
-			return NextResponse.json({ error: 'Invalid username' }, { status: 401 });
-
-		const validPassword = await bcrypt.compare(password, userDB.passwordHash);
-		if (!validPassword) {
-			return NextResponse.json({ error: 'Invalid password' }, { status: 401 });
-		}
-
-		// Create JWT
-		const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: '1h' });
-
-		return NextResponse.json({ token }, { status: 200 });
-	} catch (error) {
-		console.error(error);
-		return NextResponse.json({ error: 'Server error' }, { status: 500 });
+	if (!user) {
+		return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 	}
+
+	const valid = await bcrypt.compare(password, user.passwordHash);
+	if (!valid) {
+		return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+	}
+
+	const token = jwt.sign({ id: user.id, username: user.username }, SECRET_KEY, {
+		expiresIn: '1d',
+	});
+
+	(await cookies()).set({
+		name: 'token',
+		value: token,
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		path: '/',
+		maxAge: 60 * 60 * 24,
+	});
+
+	return NextResponse.json({ message: 'Login successful' });
 }

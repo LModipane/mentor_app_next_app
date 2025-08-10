@@ -15,17 +15,27 @@ const RegisterForm = () => {
 				headers: {
 					'Content-Type': 'application/json',
 				},
-				body: JSON.stringify({ username, password }),
+				body: JSON.stringify({ username, password }), // make sure `email` is included
 			});
-			if (res.status !== 201) throw new Error('Registration failed');
 
 			const data = await res.json();
+
+			if (!res.ok) {
+				console.error('Registration failed:', data.error || 'Unknown error');
+				alert(data.error || 'Registration failed. Please try again.');
+				return;
+			}
+
 			alert(data.message || 'Registration successful');
+
+			// Since the cookie is already set by the server, we can redirect right away
+			window.location.href = '/';
 		} catch (error) {
 			console.error('Registration failed:', error);
 			alert('Registration failed. Please try again.');
 		}
 	};
+
 
 	return (
 		<div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex flex-col items-center justify-center border border-gray-300 dark:border-gray-700 rounded-lg shadow-lg p-2 m-1">

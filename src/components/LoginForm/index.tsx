@@ -17,12 +17,20 @@ const LoginForm = () => {
 				},
 				body: JSON.stringify({ username, password }),
 			});
-			if (res.status !== 200) throw new Error('Login failed');
 
 			const data = await res.json();
-			console.log('Login successful:', data);
-			// Store token
-			localStorage.setItem('jwt_token', data.token);
+
+			if (!res.ok) {
+				console.error('Login failed:', data.error || 'Unknown error');
+				alert(data.error || 'Login failed. Please try again.');
+				return;
+			}
+
+			console.log('Login successful:', data.message);
+			// No need to store JWT manually — it's already in the HTTP-only cookie
+
+			// Optional: redirect after login
+			window.location.href = '/';
 		} catch (error) {
 			console.error('Login failed:', error);
 			alert('Login failed. Please try again.');

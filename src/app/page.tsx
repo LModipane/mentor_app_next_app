@@ -57,9 +57,9 @@ export default async function Home() {
 			<Dashboard />
 			<div className="flex-1 p-6">
 				<div className="p-4 rounded-lg mb-6 w-full">
-					<h1 className="text-2xl font-bold mb-4 ">Welcome to the Mentor Dashboard</h1>
+					<h1 className="text-2xl font-bold mb-4 ">Mentor Dashboard</h1>
 				</div>
-				<ul className="flex flex-wrap gap-4 scrollbar h-[85%] overflow-y-scroll">
+				<ul className="flex flex-wrap gap-4 scrollbar h-[85%] ">
 					{mentors.map((mentor, index) => (
 						<MentorCard key={index} {...mentor} />
 					))}
